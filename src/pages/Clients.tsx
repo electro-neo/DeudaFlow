@@ -9,6 +9,7 @@ import { Plus, Search, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
+import { useSession } from "@supabase/auth-helpers-react";
 
 export const Clients = () => {
   const [clients, setClients] = useState<Client[]>([]);
@@ -23,16 +24,30 @@ export const Clients = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  const session = useSession();
+  const user = session?.user;
+
+  if (session === undefined) {
+    return <div>Cargando...</div>;
+  }
+  if (session === null) {
+    navigate("/login");
+    return null;
+  }
+
   useEffect(() => {
-    fetchClients();
-    // Si quieres cargar transacciones desde Supabase, crea una función similar a fetchClients
-  }, []);
+    if (user) {
+      fetchClients();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   // Cargar clientes desde Supabase
   const fetchClients = async () => {
     const { data, error } = await supabase
       .from("clients")
       .select("*")
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false });
     if (error) {
       toast({ title: "Error al cargar clientes", description: error.message });
@@ -43,6 +58,10 @@ export const Clients = () => {
 
   // Guardar (crear o actualizar) cliente en Supabase
   const handleSaveClient = async (clientData: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => {
+    if (!user) {
+      toast({ title: "Error", description: "No hay usuario autenticado." });
+      return;
+    }
     const now = new Date().toISOString();
 
     if (editingClient) {
@@ -50,7 +69,8 @@ export const Clients = () => {
       const { error } = await supabase
         .from("clients")
         .update({ ...clientData, updated_at: now })
-        .eq("id", editingClient.id);
+        .eq("id", editingClient.id)
+        .eq("user_id", user.id); // Solo permite actualizar si es del usuario
       if (error) {
         toast({ title: "Error al actualizar cliente", description: error.message });
       } else {
@@ -60,9 +80,12 @@ export const Clients = () => {
       setEditingClient(null);
     } else {
       // Crear nuevo cliente
+      console.log("user:", user);
+      console.log("user.id:", user?.id);
+      console.log("Insertando cliente con user_id:", user?.id, clientData);
       const { error } = await supabase
         .from("clients")
-        .insert([{ ...clientData, balance: clientData.balance ?? 0, created_at: now, updated_at: now }]);
+        .insert([{ ...clientData, balance: clientData.balance ?? 0, created_at: now, updated_at: now, user_id: user.id }]);
       if (error) {
         toast({ title: "Error al crear cliente", description: error.message });
       } else {
@@ -78,7 +101,8 @@ export const Clients = () => {
       const { error } = await supabase
         .from("clients")
         .delete()
-        .eq("id", clientId);
+        .eq("id", clientId)
+        .eq("user_id", user.id); // Solo permite eliminar si es del usuario
       if (error) {
         toast({ title: "Error al eliminar cliente", description: error.message });
       } else {

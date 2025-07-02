@@ -7,8 +7,9 @@ import { TransactionsList } from "@/components/TransactionsList";
 import { TransactionForm } from "@/components/TransactionForm";
 import { Client, Transaction } from "@/types/client";
 import { Plus, Search, Filter, Download } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useSession } from "@supabase/auth-helpers-react";
 
 export const Transactions = () => {
   const [clients, setClients] = useState<Client[]>([]);
@@ -22,7 +23,10 @@ export const Transactions = () => {
   const [transactionType, setTransactionType] = useState<'debt' | 'payment'>('debt');
   
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { toast } = useToast();
+  const session = useSession();
+  const user = session?.user;
 
   useEffect(() => {
     loadData();
@@ -152,6 +156,14 @@ export const Transactions = () => {
       currency: 'MXN'
     }).format(amount);
   };
+
+  if (session === undefined) {
+    return <div>Cargando...</div>;
+  }
+  if (session === null) {
+    navigate("/login");
+    return null;
+  }
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-6">

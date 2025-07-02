@@ -8,10 +8,13 @@ import { Plus, Activity } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { initializeSampleData } from "@/data/sampleData";
 import { supabase } from "../supabaseClient";
+import { useSession } from "@supabase/auth-helpers-react";
 
 export const Dashboard = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const session = useSession();
+  const user = session?.user;
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -47,6 +50,14 @@ export const Dashboard = () => {
       clientName: client?.name || 'Cliente no encontrado'
     };
   });
+
+  if (session === undefined) {
+    return <div>Cargando...</div>;
+  }
+  if (session === null) {
+    navigate("/login");
+    return null;
+  }
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-8">
