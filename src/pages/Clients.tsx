@@ -62,7 +62,7 @@ export const Clients = () => {
       // Crear nuevo cliente
       const { error } = await supabase
         .from("clients")
-        .insert([{ ...clientData, balance: 0, created_at: now, updated_at: now }]);
+        .insert([{ ...clientData, balance: clientData.balance ?? 0, created_at: now, updated_at: now }]);
       if (error) {
         toast({ title: "Error al crear cliente", description: error.message });
       } else {
