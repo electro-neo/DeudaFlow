@@ -8,6 +8,7 @@ import { Client, Transaction } from "@/types/client";
 import { Plus, Search, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "../supabaseClient";
 
 export const Clients = () => {
   const [clients, setClients] = useState<Client[]>([]);
@@ -18,75 +19,77 @@ export const Clients = () => {
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [transactionType, setTransactionType] = useState<'debt' | 'payment'>('debt');
-  
+
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
-    loadData();
+    fetchClients();
+    // Si quieres cargar transacciones desde Supabase, crea una función similar a fetchClients
   }, []);
 
-  const loadData = () => {
-    const savedClients = localStorage.getItem('debt_app_clients');
-    const savedTransactions = localStorage.getItem('debt_app_transactions');
-    
-    if (savedClients) {
-      setClients(JSON.parse(savedClients));
-    }
-    
-    if (savedTransactions) {
-      setTransactions(JSON.parse(savedTransactions));
-    }
-  };
-
-  const saveClients = (updatedClients: Client[]) => {
-    setClients(updatedClients);
-    localStorage.setItem('debt_app_clients', JSON.stringify(updatedClients));
-  };
-
-  const saveTransactions = (updatedTransactions: Transaction[]) => {
-    setTransactions(updatedTransactions);
-    localStorage.setItem('debt_app_transactions', JSON.stringify(updatedTransactions));
-  };
-
-  const handleSaveClient = (clientData: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const now = new Date().toISOString();
-    
-    if (editingClient) {
-      const updatedClients = clients.map(client =>
-        client.id === editingClient.id
-          ? { ...client, ...clientData, updatedAt: now }
-          : client
-      );
-      saveClients(updatedClients);
-      toast({ title: "Cliente actualizado correctamente" });
+  // Cargar clientes desde Supabase
+  const fetchClients = async () => {
+    const { data, error } = await supabase
+      .from("clients")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) {
+      toast({ title: "Error al cargar clientes", description: error.message });
     } else {
-      const newClient: Client = {
-        ...clientData,
-        id: crypto.randomUUID(),
-        createdAt: now,
-        updatedAt: now,
-      };
-      saveClients([...clients, newClient]);
-      toast({ title: "Cliente creado correctamente" });
+      setClients(data || []);
     }
-    
-    setEditingClient(null);
   };
 
-  const handleDeleteClient = (clientId: string) => {
+  // Guardar (crear o actualizar) cliente en Supabase
+  const handleSaveClient = async (clientData: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const now = new Date().toISOString();
+
+    if (editingClient) {
+      // Actualizar cliente existente
+      const { error } = await supabase
+        .from("clients")
+        .update({ ...clientData, updated_at: now })
+        .eq("id", editingClient.id);
+      if (error) {
+        toast({ title: "Error al actualizar cliente", description: error.message });
+      } else {
+        toast({ title: "Cliente actualizado correctamente" });
+        fetchClients();
+      }
+      setEditingClient(null);
+    } else {
+      // Crear nuevo cliente
+      const { error } = await supabase
+        .from("clients")
+        .insert([{ ...clientData, balance: 0, created_at: now, updated_at: now }]);
+      if (error) {
+        toast({ title: "Error al crear cliente", description: error.message });
+      } else {
+        toast({ title: "Cliente creado correctamente" });
+        fetchClients();
+      }
+    }
+  };
+
+  // Eliminar cliente de Supabase
+  const handleDeleteClient = async (clientId: string) => {
     if (confirm("¿Estás seguro de que deseas eliminar este cliente?")) {
-      const updatedClients = clients.filter(client => client.id !== clientId);
-      saveClients(updatedClients);
-      
-      // También eliminar las transacciones del cliente
-      const updatedTransactions = transactions.filter(t => t.clientId !== clientId);
-      saveTransactions(updatedTransactions);
-      
-      toast({ title: "Cliente eliminado correctamente" });
+      const { error } = await supabase
+        .from("clients")
+        .delete()
+        .eq("id", clientId);
+      if (error) {
+        toast({ title: "Error al eliminar cliente", description: error.message });
+      } else {
+        toast({ title: "Cliente eliminado correctamente" });
+        fetchClients();
+      }
     }
   };
 
+  // Las siguientes funciones siguen usando el estado local para transacciones.
+  // Si quieres migrar transacciones a Supabase, deberás adaptar también esas funciones.
   const handleAddTransaction = (clientId: string, type: 'debt' | 'payment') => {
     const client = clients.find(c => c.id === clientId);
     if (client) {
@@ -103,6 +106,8 @@ export const Clients = () => {
     description: string;
     date: string;
   }) => {
+    // Aquí deberías guardar la transacción en Supabase si ya tienes la tabla creada
+    // Por ahora, sigue usando localStorage/estado local
     const newTransaction: Transaction = {
       ...transactionData,
       id: crypto.randomUUID(),
@@ -110,27 +115,23 @@ export const Clients = () => {
     };
 
     const updatedTransactions = [...transactions, newTransaction];
-    saveTransactions(updatedTransactions);
+    setTransactions(updatedTransactions);
 
-    // Actualizar el balance del cliente
-    const updatedClients = clients.map(client => {
-      if (client.id === transactionData.clientId) {
-        const balanceChange = transactionData.type === 'debt' 
-          ? transactionData.amount 
-          : -transactionData.amount;
-        return {
-          ...client,
-          balance: client.balance + balanceChange,
-          updatedAt: new Date().toISOString()
-        };
-      }
-      return client;
-    });
-    
-    saveClients(updatedClients);
-    
-    toast({ 
-      title: `${transactionData.type === 'debt' ? 'Deuda' : 'Abono'} registrado correctamente` 
+    // Actualizar el balance del cliente en Supabase
+    const client = clients.find(c => c.id === transactionData.clientId);
+    if (client) {
+      const balanceChange = transactionData.type === 'debt'
+        ? transactionData.amount
+        : -transactionData.amount;
+      supabase
+        .from("clients")
+        .update({ balance: client.balance + balanceChange, updated_at: new Date().toISOString() })
+        .eq("id", client.id)
+        .then(() => fetchClients());
+    }
+
+    toast({
+      title: `${transactionData.type === 'debt' ? 'Deuda' : 'Abono'} registrado correctamente`
     });
   };
 
@@ -197,8 +198,8 @@ export const Clients = () => {
             {searchTerm ? 'No se encontraron clientes' : 'No hay clientes registrados'}
           </h3>
           <p className="text-muted-foreground mb-4">
-            {searchTerm 
-              ? 'Intenta con otros términos de búsqueda' 
+            {searchTerm
+              ? 'Intenta con otros términos de búsqueda'
               : 'Comienza agregando tu primer cliente'
             }
           </p>
