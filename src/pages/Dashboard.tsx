@@ -63,12 +63,17 @@ export const Dashboard = () => {
     .filter(t => t.type === 'payment')
     .reduce((sum, t) => sum + Number(t.amount), 0);
 
+  useEffect(() => {
+    if (session === null) {
+      navigate("/login");
+    }
+  }, [session, navigate]);
+
   if (session === undefined) {
     return <div>Cargando...</div>;
   }
   if (session === null) {
-    navigate("/login");
-    return null;
+    return null; // Ya navega en el useEffect
   }
 
   return (

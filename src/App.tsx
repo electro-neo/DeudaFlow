@@ -11,8 +11,6 @@ import NotFound from "./pages/NotFound";
 import { Navigation } from "./components/Navigation";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import { SessionContextProvider } from "@supabase/auth-helpers-react";
-import { supabase } from "./supabaseClient";
 
 const queryClient = new QueryClient();
 
@@ -24,24 +22,22 @@ const App = () => {
     location.pathname === "/";
 
   return (
-    <SessionContextProvider supabaseClient={supabase}>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          {!hideNav && <Navigation />}
-          <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/clients" element={<Clients />} />
-            <Route path="/transactions" element={<Transactions />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <Toaster />
-          <Sonner />
-        </TooltipProvider>
-      </QueryClientProvider>
-    </SessionContextProvider>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        {!hideNav && <Navigation />}
+        <Routes>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/clients" element={<Clients />} />
+          <Route path="/transactions" element={<Transactions />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+        <Toaster />
+        <Sonner />
+      </TooltipProvider>
+    </QueryClientProvider>
   );
 };
 

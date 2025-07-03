@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
+import { useSession } from "@supabase/auth-helpers-react";
 import { Box, Button, TextField, Typography, Paper } from "@mui/material";
 
 export default function Login() {
@@ -8,6 +9,14 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const session = useSession();
+
+  // Redirige si ya hay sesión
+  useEffect(() => {
+    if (session) {
+      navigate("/dashboard");
+    }
+  }, [session, navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -16,6 +25,15 @@ export default function Login() {
     else {
       setError("");
       navigate("/dashboard");
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+    });
+    if (error) {
+      setError("Error al iniciar sesión con Google: " + error.message);
     }
   };
 
@@ -56,6 +74,16 @@ export default function Login() {
             fullWidth
           >
             Iniciar sesión
+          </Button>
+          <Button
+            variant="outlined"
+            color="secondary"
+            size="large"
+            sx={{ mt: 2 }}
+            fullWidth
+            onClick={handleGoogleSignIn}
+          >
+            Iniciar sesión con Google
           </Button>
           {error && <Typography color="error" align="center">{error}</Typography>}
         </form>
