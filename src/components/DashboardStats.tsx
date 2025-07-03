@@ -18,7 +18,11 @@ export const DashboardStats = ({ clients, transactions }: DashboardStatsProps) =
   const totalClients = clients.length;
   const totalBalance = clients.reduce((sum, client) => sum + client.balance, 0);
   const totalDebts = clients.reduce((sum, client) => sum + (client.balance > 0 ? client.balance : 0), 0);
-  const totalCredits = clients.reduce((sum, client) => sum + (client.balance < 0 ? Math.abs(client.balance) : 0), 0);
+
+  // Nuevo cálculo: suma de abonos (type === 'payment')
+  const totalAdelantado = transactions
+    .filter(t => t.type === 'payment')
+    .reduce((sum, t) => sum + Number(t.amount), 0);
 
   const stats = [
     {
@@ -40,8 +44,8 @@ export const DashboardStats = ({ clients, transactions }: DashboardStatsProps) =
       color: "text-destructive"
     },
     {
-      title: "Total Adelantado",
-      value: formatCurrency(totalCredits),
+      title: "Total Abonado",
+      value: formatCurrency(totalAdelantado),
       icon: TrendingDown,
       color: "text-success"
     }

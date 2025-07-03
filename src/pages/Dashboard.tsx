@@ -2,11 +2,9 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardStats } from "@/components/DashboardStats";
-import { TransactionsList } from "@/components/TransactionsList";
 import { Client, Transaction, TransactionWithClient } from "@/types/client";
 import { Plus, Activity } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { initializeSampleData } from "@/data/sampleData";
 import { supabase } from "../supabaseClient";
 import { useSession } from "@supabase/auth-helpers-react";
 
@@ -18,38 +16,52 @@ export const Dashboard = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Inicializar datos de ejemplo si no existen
-    initializeSampleData();
-    
-    // Cargar datos del localStorage
-    const savedClients = localStorage.getItem('debt_app_clients');
-    const savedTransactions = localStorage.getItem('debt_app_transactions');
-    
-    if (savedClients) {
-      setClients(JSON.parse(savedClients));
+    if (user) {
+      fetchClients();
+      fetchTransactions();
     }
-    
-    if (savedTransactions) {
-      setTransactions(JSON.parse(savedTransactions));
-    }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  const fetchClients = async () => {
+    const { data, error } = await supabase
+      .from("clients")
+      .select("*")
+      .eq("user_id", user.id);
+    if (!error) setClients(data || []);
+  };
+
+  const fetchTransactions = async () => {
+    const { data, error } = await supabase
+      .from("transactions")
+      .select("*")
+      .eq("user_id", user.id);
+    if (!error) setTransactions(data || []);
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/login");
   };
 
+  // Ordena y toma las 10 transacciones más recientes
   const recentTransactions = transactions
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 10);
 
+  // Relaciona transacciones con clientes
   const transactionsWithClient: TransactionWithClient[] = recentTransactions.map(transaction => {
-    const client = clients.find(c => c.id === transaction.clientId);
+    const client = clients.find(c => c.id === transaction.client_id);
     return {
       ...transaction,
       clientName: client?.name || 'Cliente no encontrado'
     };
   });
+
+  // Calcula el total adelantado (suma de abonos)
+  const totalAdelantado = transactions
+    .filter(t => t.type === 'payment')
+    .reduce((sum, t) => sum + Number(t.amount), 0);
 
   if (session === undefined) {
     return <div>Cargando...</div>;
@@ -82,7 +94,11 @@ export const Dashboard = () => {
       </div>
 
       {/* Stats */}
-      <DashboardStats clients={clients} transactions={transactions} />
+      <DashboardStats
+        clients={clients}
+        transactions={transactions}
+        totalAdelantado={totalAdelantado}
+      />
 
       {/* Recent Transactions */}
       <Card>
@@ -138,6 +154,12 @@ export const Dashboard = () => {
           )}
         </CardContent>
       </Card>
+
+      <div className="my-4">
+        <p className="font-bold">
+          Total adelantado: {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(totalAdelantado)}
+        </p>
+      </div>
     </div>
   );
 };

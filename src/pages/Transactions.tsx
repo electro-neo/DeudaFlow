@@ -10,6 +10,7 @@ import { Plus, Search, Filter, Download } from "lucide-react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useSession } from "@supabase/auth-helpers-react";
+import { supabase } from "../supabaseClient";
 
 export const Transactions = () => {
   const [clients, setClients] = useState<Client[]>([]);
@@ -28,9 +29,13 @@ export const Transactions = () => {
   const session = useSession();
   const user = session?.user;
 
+  // Cargar clientes y transacciones desde Supabase
   useEffect(() => {
-    loadData();
-  }, []);
+    if (user) {
+      fetchClients();
+      fetchTransactions();
+    }
+  }, [user]);
 
   useEffect(() => {
     // Si hay un parámetro de cliente en la URL, seleccionarlo
@@ -45,7 +50,7 @@ export const Transactions = () => {
     let filtered = transactions;
 
     if (selectedClientId !== "all") {
-      filtered = filtered.filter(t => t.clientId === selectedClientId);
+      filtered = filtered.filter(t => t.client_id === selectedClientId);
     }
 
     if (typeFilter !== "all") {
@@ -54,24 +59,35 @@ export const Transactions = () => {
 
     if (searchTerm) {
       filtered = filtered.filter(t => 
-        t.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        clients.find(c => c.id === t.clientId)?.name.toLowerCase().includes(searchTerm.toLowerCase())
+        (t.description?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
+        (clients.find(c => c.id === t.client_id)?.name.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
       );
     }
 
     setFilteredTransactions(filtered);
   }, [transactions, selectedClientId, typeFilter, searchTerm, clients]);
 
-  const loadData = () => {
-    const savedClients = localStorage.getItem('debt_app_clients');
-    const savedTransactions = localStorage.getItem('debt_app_transactions');
-    
-    if (savedClients) {
-      setClients(JSON.parse(savedClients));
+  const fetchClients = async () => {
+    const { data, error } = await supabase
+      .from("clients")
+      .select("*")
+      .eq("user_id", user.id);
+    if (error) {
+      toast({ title: "Error al cargar clientes", description: error.message });
+    } else {
+      setClients(data || []);
     }
-    
-    if (savedTransactions) {
-      setTransactions(JSON.parse(savedTransactions));
+  };
+
+  const fetchTransactions = async () => {
+    const { data, error } = await supabase
+      .from("transactions")
+      .select("*")
+      .eq("user_id", user.id);
+    if (error) {
+      toast({ title: "Error al cargar transacciones", description: error.message });
+    } else {
+      setTransactions(data || []);
     }
   };
 
@@ -85,42 +101,33 @@ export const Transactions = () => {
     localStorage.setItem('debt_app_clients', JSON.stringify(updatedClients));
   };
 
-  const handleSaveTransaction = (transactionData: {
+  // Guardar nueva transacción en Supabase
+  const handleSaveTransaction = async (transactionData: {
     clientId: string;
     type: 'debt' | 'payment';
     amount: number;
     description: string;
     date: string;
   }) => {
-    const newTransaction: Transaction = {
-      ...transactionData,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-    };
-
-    const updatedTransactions = [...transactions, newTransaction];
-    saveTransactions(updatedTransactions);
-
-    // Actualizar el balance del cliente
-    const updatedClients = clients.map(client => {
-      if (client.id === transactionData.clientId) {
-        const balanceChange = transactionData.type === 'debt' 
-          ? transactionData.amount 
-          : -transactionData.amount;
-        return {
-          ...client,
-          balance: client.balance + balanceChange,
-          updatedAt: new Date().toISOString()
-        };
-      }
-      return client;
-    });
-    
-    saveClients(updatedClients);
-    
-    toast({ 
-      title: `${transactionData.type === 'debt' ? 'Deuda' : 'Abono'} registrado correctamente` 
-    });
+    if (!user) return;
+    const { error } = await supabase
+      .from("transactions")
+      .insert([{
+        client_id: transactionData.clientId,
+        user_id: user.id,
+        type: transactionData.type,
+        amount: transactionData.amount,
+        description: transactionData.description,
+        date: transactionData.date,
+        created_at: new Date().toISOString(),
+      }]);
+    if (error) {
+      toast({ title: "Error al guardar transacción", description: error.message });
+    } else {
+      toast({ title: `${transactionData.type === 'debt' ? 'Deuda' : 'Abono'} registrado correctamente` });
+      fetchTransactions();
+      fetchClients(); // Para actualizar balances si lo manejas en clientes
+    }
   };
 
   const handleAddTransaction = (type: 'debt' | 'payment') => {
@@ -177,24 +184,7 @@ export const Transactions = () => {
             Historial de deudas y abonos
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => handleAddTransaction('payment')}
-            disabled={clients.length === 0}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Abono
-          </Button>
-          <Button 
-            onClick={() => handleAddTransaction('debt')}
-            disabled={clients.length === 0}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Deuda
-          </Button>
-        </div>
-      </div>
+      </div> 
 
       {/* Filters */}
       <Card>
@@ -286,6 +276,7 @@ export const Transactions = () => {
       <TransactionsList 
         transactions={filteredTransactions} 
         client={selectedClientData}
+        clients={clients} // <-- pasa la lista completa
       />
 
       {/* Transaction Form */}

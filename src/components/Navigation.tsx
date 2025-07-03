@@ -64,7 +64,10 @@ export const Navigation = () => {
                 </Button>
               );
             })}
-            {/* Botón de cerrar sesión */}
+          </div>
+
+          {/* Botón de cerrar sesión alineado a la derecha */}
+          <div className="flex-1 flex justify-end">
             <Button
               variant="destructive"
               size="sm"

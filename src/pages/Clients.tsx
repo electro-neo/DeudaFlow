@@ -51,6 +51,7 @@ export const Clients = () => {
       .order("created_at", { ascending: false });
     if (error) {
       toast({ title: "Error al cargar clientes", description: error.message });
+      setClients([]); // <-- agrega esto
     } else {
       setClients(data || []);
     }
@@ -123,51 +124,67 @@ export const Clients = () => {
     }
   };
 
-  const handleSaveTransaction = (transactionData: {
+  const handleSaveTransaction = async (transactionData: {
     clientId: string;
     type: 'debt' | 'payment';
     amount: number;
     description: string;
     date: string;
   }) => {
-    // Aquí deberías guardar la transacción en Supabase si ya tienes la tabla creada
-    // Por ahora, sigue usando localStorage/estado local
-    const newTransaction: Transaction = {
-      ...transactionData,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-    };
+    if (!user) {
+      toast({ title: "Error", description: "No hay usuario autenticado." });
+      return;
+    }
 
-    const updatedTransactions = [...transactions, newTransaction];
-    setTransactions(updatedTransactions);
+    // 1. Guardar la transacción en Supabase
+    const { error: insertError } = await supabase
+      .from("transactions")
+      .insert([{
+        client_id: transactionData.clientId,
+        user_id: user.id,
+        type: transactionData.type,
+        amount: transactionData.amount,
+        description: transactionData.description,
+        date: transactionData.date,
+        created_at: new Date().toISOString(),
+      }]);
 
-    // Actualizar el balance del cliente en Supabase
+    if (insertError) {
+      toast({ title: "Error al registrar transacción", description: insertError.message });
+      return;
+    }
+
+    // 2. Actualizar el balance del cliente en Supabase
     const client = clients.find(c => c.id === transactionData.clientId);
     if (client) {
       const balanceChange = transactionData.type === 'debt'
         ? transactionData.amount
         : -transactionData.amount;
-      supabase
+
+      const { error: updateError } = await supabase
         .from("clients")
         .update({ balance: client.balance + balanceChange, updated_at: new Date().toISOString() })
-        .eq("id", client.id)
-        .then(() => fetchClients());
-    }
+        .eq("id", client.id);
 
-    toast({
-      title: `${transactionData.type === 'debt' ? 'Deuda' : 'Abono'} registrado correctamente`
-    });
+      if (updateError) {
+        toast({ title: "Transacción guardada, pero error al actualizar balance", description: updateError.message });
+      } else {
+        toast({ title: `${transactionData.type === 'debt' ? 'Deuda' : 'Abono'} registrado correctamente` });
+        fetchClients();
+      }
+    }
+    setShowTransactionForm(false);
   };
 
   const handleViewTransactions = (clientId: string) => {
     navigate(`/transactions?client=${clientId}`);
   };
 
-  const filteredClients = clients.filter(client =>
-    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.phone?.includes(searchTerm)
-  );
+  const filteredClients = Array.isArray(clients) ? clients.filter(client =>
+    (client.name?.toLowerCase() ?? "").includes(searchTerm.toLowerCase()) ||
+    (client.email?.toLowerCase() ?? "").includes(searchTerm.toLowerCase()) ||
+    (String(client.phone ?? "")).includes(searchTerm)
+  ) : [];
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-6">
