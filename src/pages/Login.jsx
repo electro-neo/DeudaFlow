@@ -77,7 +77,7 @@ export default function Login() {
             <>Ingresa tus datos para continuar.</>
           )}
         </Typography>
-        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%' }}>
+        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
           <TextField
             label="Correo electrónico"
             type="email"
@@ -97,20 +97,65 @@ export default function Login() {
             variant="outlined"
           />
           <Button
-            type="submit"
             variant="contained"
             color="primary"
             size="large"
-            sx={{ mt: 2 }}
+            sx={{ mt: 1, mb: 0.5, transition: 'all 0.2s' }}
             fullWidth
           >
             Iniciar sesión
           </Button>
           <Button
             variant="outlined"
+            color="info"
+            size="large"
+            sx={{
+              mb: 0.5,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 1,
+              transition: 'all 0.2s',
+              borderColor: '#2563eb',
+              color: '#2563eb',
+              '&:hover': {
+                backgroundColor: '#dbeafe',
+                borderColor: '#2563eb',
+                color: '#1d4ed8',
+              },
+            }}
+            fullWidth
+            onClick={async () => {
+              setError("");
+              // Puedes cambiar estos datos por los de un usuario demo real creado en tu Supabase
+              const guestEmail = "invitado@demo.com";
+              const guestPassword = "invitado123";
+              const { error } = await supabase.auth.signInWithPassword({ email: guestEmail, password: guestPassword });
+              if (error) setError("No se pudo iniciar sesión como invitado: " + error.message);
+              else navigate("/dashboard");
+            }}
+          >
+            Probar como invitado
+          </Button>
+          <Button
+            variant="outlined"
             color="secondary"
             size="large"
-            sx={{ mt: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}
+            sx={{
+              mb: 0.5,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 1,
+              transition: 'all 0.2s',
+              borderColor: '#ef4444',
+              color: '#ef4444',
+              '&:hover': {
+                backgroundColor: '#fee2e2',
+                borderColor: '#ef4444',
+                color: '#b91c1c',
+              },
+            }}
             fullWidth
             onClick={handleGoogleSignIn}
           >

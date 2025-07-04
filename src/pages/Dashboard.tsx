@@ -174,11 +174,7 @@ export const Dashboard = () => {
         </CardContent>
       </Card>
 
-      <div className="my-4">
-        <p className="font-bold">
-          Total adelantado: {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(totalAdelantado)}
-        </p>
-      </div>
+      {/* Eliminado Total adelantado, solo se muestra el stats Total Abonado */}
     </div>
   );
 };

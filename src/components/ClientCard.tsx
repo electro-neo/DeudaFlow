@@ -70,7 +70,8 @@ export const ClientCard = ({
             variant="outline"
             size="sm"
             onClick={() => onAddTransaction(client.id, 'debt')}
-            className="flex items-center gap-1"
+            className="flex items-center gap-1 hover:bg-red-100 hover:border-red-400 hover:text-red-700 transition-colors"
+            style={{ borderColor: '#ef4444' }}
           >
             <Plus className="h-4 w-4" />
             Deuda
@@ -79,7 +80,8 @@ export const ClientCard = ({
             variant="outline"
             size="sm"
             onClick={() => onAddTransaction(client.id, 'payment')}
-            className="flex items-center gap-1"
+            className="flex items-center gap-1 hover:bg-green-100 hover:border-green-400 hover:text-green-700 transition-colors"
+            style={{ borderColor: '#22c55e' }}
           >
             <Minus className="h-4 w-4" />
             Abono
@@ -91,7 +93,8 @@ export const ClientCard = ({
             variant="secondary"
             size="sm"
             onClick={() => onViewTransactions(client.id)}
-            className="flex-1"
+            className="flex-1 hover:bg-blue-100 hover:border-blue-400 hover:text-blue-700 transition-colors"
+            style={{ borderColor: '#2563eb' }}
           >
             Ver Movimientos
           </Button>
