@@ -1,12 +1,14 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Users, Activity } from "lucide-react";
+import { LayoutDashboard, Users, Activity, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "../supabaseClient";
 
 export const Navigation = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -43,18 +45,17 @@ export const Navigation = () => {
   return (
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center space-x-4">
+        <div className="flex h-16 items-center justify-between">
           <div className="flex items-center space-x-2">
             <div className="font-bold text-xl bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
               DebtManager
             </div>
           </div>
-
-          <div className="flex items-center space-x-1 ml-8">
+          {/* Menú desktop */}
+          <div className="hidden md:flex items-center space-x-1 ml-8">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.href;
-
               return (
                 <Button
                   key={item.href}
@@ -74,9 +75,8 @@ export const Navigation = () => {
               );
             })}
           </div>
-
-          {/* Botón de cerrar sesión alineado a la derecha */}
-          <div className="flex-1 flex justify-end">
+          {/* Botón de cerrar sesión desktop */}
+          <div className="hidden md:flex flex-1 justify-end">
             <Button
               variant="destructive"
               size="sm"
@@ -86,7 +86,47 @@ export const Navigation = () => {
               Cerrar sesión
             </Button>
           </div>
+          {/* Botón hamburguesa móvil */}
+          <div className="md:hidden flex-1 flex justify-end">
+            <Button variant="ghost" size="icon" onClick={() => setMenuOpen(!menuOpen)}>
+              <Menu className="h-6 w-6" />
+            </Button>
+          </div>
         </div>
+        {/* Menú móvil desplegable */}
+        {menuOpen && (
+          <div className="md:hidden absolute left-0 top-16 w-full bg-background border-b z-50 shadow-lg animate-fade-in">
+            <div className="flex flex-col items-center py-4 gap-2">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.href;
+                return (
+                  <Button
+                    key={item.href}
+                    variant={isActive ? "default" : "ghost"}
+                    size="lg"
+                    asChild
+                    className={cn("w-11/12 justify-start", isActive && "shadow-md")}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <Link to={item.href} className="flex items-center gap-2 w-full">
+                      <Icon className="h-5 w-5" />
+                      {item.label}
+                    </Link>
+                  </Button>
+                );
+              })}
+              <Button
+                variant="destructive"
+                size="lg"
+                className="w-11/12"
+                onClick={handleLogout}
+              >
+                Cerrar sesión
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </nav>
   );

@@ -20,21 +20,21 @@ export default function ForgotPassword() {
     if (error) {
       setError(error.message);
     } else {
-      setMessage("Si el correo está registrado, recibirás un enlace para restablecer tu contraseña.");
+      setMessage("Si el correo está registrado, recibirás un enlace para restablecer tu contraseña. / If the email is registered, you will receive a link to reset your password.");
     }
     setLoading(false);
   };
 
   return (
-    <Box sx={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "background.default" }}>
-      <Paper elevation={6} sx={{ p: 4, maxWidth: 400, width: "100%" }}>
+    <Box sx={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "background.default", px: { xs: 1, sm: 2 } }}>
+      <Paper elevation={6} sx={{ p: { xs: 2, sm: 4 }, maxWidth: 400, width: "100%" }}>
         <Typography variant="h5" align="center" color="primary" fontWeight="bold" gutterBottom>
           Recuperar contraseña
         </Typography>
         <Typography align="center" color="text.secondary" mb={2}>
           Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.
         </Typography>
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%' }}>
           <TextField
             label="Correo electrónico"
             type="email"

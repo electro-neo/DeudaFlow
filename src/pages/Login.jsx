@@ -62,8 +62,8 @@ export default function Login() {
   }, [session, navigate]);
 
   return (
-    <Box sx={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "background.default" }}>
-      <Paper elevation={6} sx={{ p: 4, maxWidth: 400, width: "100%" }}>
+    <Box sx={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "background.default", px: { xs: 1, sm: 2 } }}>
+      <Paper elevation={6} sx={{ p: { xs: 2, sm: 4 }, maxWidth: 400, width: "100%" }}>
         <Typography variant="h4" align="center" color="primary" fontWeight="bold" gutterBottom>
           Iniciar sesión
         </Typography>
@@ -77,7 +77,7 @@ export default function Login() {
             <>Ingresa tus datos para continuar.</>
           )}
         </Typography>
-        <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%' }}>
           <TextField
             label="Correo electrónico"
             type="email"

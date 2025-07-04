@@ -187,9 +187,9 @@ export const Clients = () => {
   ) : [];
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-6">
+    <div className="container mx-auto px-2 sm:px-4 py-6 sm:py-8 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
             Gestión de Clientes
@@ -205,7 +205,7 @@ export const Clients = () => {
       </div>
 
       {/* Search */}
-      <div className="relative max-w-md">
+      <div className="relative w-full max-w-md">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
         <Input
           placeholder="Buscar clientes..."
@@ -217,7 +217,7 @@ export const Clients = () => {
 
       {/* Clients Grid */}
       {filteredClients.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {filteredClients.map((client) => (
             <ClientCard
               key={client.id}
@@ -233,7 +233,7 @@ export const Clients = () => {
           ))}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-12">
+        <div className="flex flex-col items-center justify-center py-8 sm:py-12">
           <Users className="h-16 w-16 text-muted-foreground mb-4" />
           <h3 className="text-xl font-semibold mb-2">
             {searchTerm ? 'No se encontraron clientes' : 'No hay clientes registrados'}
