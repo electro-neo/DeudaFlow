@@ -10,6 +10,15 @@ export const Navigation = () => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    // Borra cookies de Google para forzar selección de cuenta
+    document.cookie = "G_AUTHUSER=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie = "G_ENABLED_IDPS=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    // Opcional: borra todas las cookies de dominio actual (solo frontend, no httpOnly)
+    if (window.location.hostname !== "localhost") {
+      document.cookie.split(';').forEach(function(c) {
+        document.cookie = c.replace(/^ +/, '').replace(/=.*/, '=;expires=' + new Date().toUTCString() + ';path=/');
+      });
+    }
     navigate("/login");
   };
 
