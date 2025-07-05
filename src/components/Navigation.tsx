@@ -10,7 +10,18 @@ export const Navigation = () => {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // Elimina clientes y transacciones del usuario invitado al cerrar sesión
+  const handleGuestLogoutCleanup = async () => {
+    const guestEmail = "invitado@demo.com";
+    const user = await supabase.auth.getUser();
+    if (user.data?.user?.email === guestEmail) {
+      await supabase.from("transactions").delete().eq("user_id", user.data.user.id);
+      await supabase.from("clients").delete().eq("user_id", user.data.user.id);
+    }
+  };
+
   const handleLogout = async () => {
+    await handleGuestLogoutCleanup();
     await supabase.auth.signOut();
     // Borra cookies de Google para forzar selección de cuenta
     document.cookie = "G_AUTHUSER=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
