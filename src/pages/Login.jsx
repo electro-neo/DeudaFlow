@@ -97,6 +97,7 @@ export default function Login() {
             variant="outlined"
           />
           <Button
+            type="submit"
             variant="contained"
             color="primary"
             size="large"
