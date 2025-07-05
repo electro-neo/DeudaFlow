@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useCurrency } from "../context/CurrencyContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,15 +44,19 @@ export const TransactionForm = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!client || formData.amount <= 0) return;
-    
+    let amountToSave = formData.amount;
+    // Si el toggle está en USD, el valor ingresado es moneda local y se divide para mostrar el equivalente en USD
+    if (currency === "USD") {
+      amountToSave = formData.amount; // Se guarda el valor tal cual (moneda local)
+    }
+    // Si está en 💱, también se guarda el valor tal cual
     onSave({
       clientId: client.id,
       type,
-      amount: formData.amount,
+      amount: amountToSave,
       description: formData.description,
       date: formData.date,
     });
-    
     setFormData({
       amount: 0,
       description: '',
@@ -69,11 +74,17 @@ export const TransactionForm = ({
     onOpenChange(false);
   };
 
+  const { currency, rate } = useCurrency();
+  const getDisplayAmount = (amount: number) => {
+    if (currency === "USD") return amount;
+    return amount * rate;
+  };
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-MX', {
-      style: 'currency',
-      currency: 'MXN'
-    }).format(amount);
+    if (currency === "USD") {
+      return `$${amount.toFixed(2)} USD`;
+    } else {
+      return `${getDisplayAmount(amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} 💱`;
+    }
   };
 
   return (
@@ -106,14 +117,23 @@ export const TransactionForm = ({
             <Label htmlFor="amount">Monto *</Label>
             <Input
               id="amount"
-              type="number"
-              step="0.01"
-              min="0.01"
-              value={formData.amount || ''}
-              onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
-              placeholder="0.00"
+              type="text"
+              inputMode="decimal"
+              pattern="^[0-9]*[.,]?[0-9]*$"
+              value={formData.amount === 0 ? '' : formData.amount}
+              onChange={(e) => {
+                const val = e.target.value.replace(',', '.');
+                setFormData({ ...formData, amount: val === '' ? 0 : parseFloat(val) });
+              }}
+              placeholder="Monto en moneda local"
+              autoComplete="off"
               required
             />
+            {currency === "USD" && (
+              <div className="text-xs text-muted-foreground">
+                El monto se guarda en moneda local. Equivalente en USD: <b>${formData.amount && rate ? (formData.amount / rate).toFixed(2) : '0.00'} USD</b>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">

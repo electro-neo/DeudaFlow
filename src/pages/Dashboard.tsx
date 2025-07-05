@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useCurrency } from "../context/CurrencyContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardStats } from "@/components/DashboardStats";
@@ -9,6 +10,7 @@ import { supabase } from "../supabaseClient";
 import { useSession } from "@supabase/auth-helpers-react";
 
 export const Dashboard = () => {
+  const { currency, rate } = useCurrency();
   const [clients, setClients] = useState<Client[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const session = useSession();
@@ -58,9 +60,18 @@ export const Dashboard = () => {
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 10);
 
+  // Formatea monto según moneda: siempre muestra el valor guardado en moneda local, pero si el toggle está en USD muestra el equivalente en USD
+  const formatCurrency = (amount: number, type?: string) => {
+    if (currency === "USD") {
+      return `${type === 'debt' ? '+' : '-'}$${(amount / rate).toFixed(2)} USD`;
+    } else {
+      return `${type === 'debt' ? '+' : '-'}${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} 💱`;
+    }
+  };
+
   // Relaciona transacciones con clientes
   const transactionsWithClient: TransactionWithClient[] = recentTransactions.map(transaction => {
-    const client = clients.find(c => c.id === transaction.client_id);
+    const client = clients.find(c => c.id === transaction.clientId);
     return {
       ...transaction,
       clientName: client?.name || 'Cliente no encontrado'
@@ -116,7 +127,7 @@ export const Dashboard = () => {
       <DashboardStats
         clients={clients}
         transactions={transactions}
-        totalAdelantado={totalAdelantado}
+        // totalAdelantado eliminado, ya no es necesario aquí
       />
 
       {/* Recent Transactions */}
@@ -147,11 +158,7 @@ export const Dashboard = () => {
                     <p className={`font-semibold ${
                       transaction.type === 'debt' ? 'text-destructive' : 'text-success'
                     }`}>
-                      {transaction.type === 'debt' ? '+' : '-'}
-                      {new Intl.NumberFormat('es-MX', {
-                        style: 'currency',
-                        currency: 'MXN'
-                      }).format(transaction.amount)}
+                      {formatCurrency(transaction.amount, transaction.type)}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {new Date(transaction.date).toLocaleDateString('es-MX')}

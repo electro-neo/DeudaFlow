@@ -1,18 +1,23 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Client, Transaction } from "@/types/client";
 import { Users, DollarSign, TrendingUp, TrendingDown } from "lucide-react";
+import { useCurrency } from "../context/CurrencyContext";
 
 interface DashboardStatsProps {
   clients: Client[];
   transactions: Transaction[];
 }
 
+
 export const DashboardStats = ({ clients, transactions }: DashboardStatsProps) => {
+  const { currency, rate } = useCurrency();
+  // Siempre muestra los montos en moneda local, pero si el toggle está en USD muestra el equivalente en USD
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-MX', {
-      style: 'currency',
-      currency: 'MXN'
-    }).format(amount);
+    if (currency === "USD") {
+      return `$${(amount / rate).toFixed(2)} USD`;
+    } else {
+      return `${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} 💱`;
+    }
   };
 
   const totalClients = clients.length;

@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Client } from "@/types/client";
+import { useCurrency } from "../context/CurrencyContext";
 import { User, Phone, Mail, MapPin, Trash2, Edit, Plus, Minus } from "lucide-react";
 
 interface ClientCardProps {
@@ -19,11 +20,14 @@ export const ClientCard = ({
   onAddTransaction, 
   onViewTransactions 
 }: ClientCardProps) => {
+  const { currency, rate } = useCurrency();
+  // Siempre muestra el balance en moneda local, pero si el toggle está en USD muestra el equivalente en USD
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-MX', {
-      style: 'currency',
-      currency: 'MXN'
-    }).format(amount);
+    if (currency === "USD") {
+      return `$${(amount / rate).toFixed(2)} USD`;
+    } else {
+      return `${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} 💱`;
+    }
   };
 
   return (

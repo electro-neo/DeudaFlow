@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Transaction, Client } from "@/types/client";
 import { ArrowUp, ArrowDown, Calendar, FileText } from "lucide-react";
+import { useCurrency } from "../context/CurrencyContext";
 
 interface TransactionsListProps {
   transactions: Transaction[];
@@ -9,12 +10,19 @@ interface TransactionsListProps {
   clients?: Client[]; // <-- Nuevo: lista de todos los clientes
 }
 
+
 export const TransactionsList = ({ transactions, client, clients = [] }: TransactionsListProps) => {
+  const { currency, rate } = useCurrency();
+  // Si la transacción fue registrada en USD, mostrar el monto original en USD
+  // Si fue registrada en moneda local, mostrar el monto tal cual
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-MX', {
-      style: 'currency',
-      currency: 'MXN'
-    }).format(amount);
+    if (currency === "USD") {
+      // Mostramos el monto convertido a USD (aproximado)
+      return `$${(amount / rate).toFixed(2)} USD`;
+    } else {
+      // Mostramos el monto tal cual, en moneda local
+      return `${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} 💱`;
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -44,7 +52,7 @@ export const TransactionsList = ({ transactions, client, clients = [] }: Transac
     <div className="space-y-4 mt-6">
       {sortedTransactions.map((transaction) => {
         // Busca el cliente correspondiente si no se pasó por prop
-        const transactionClient = client || clients.find(c => c.id === transaction.client_id);
+        const transactionClient = client || clients.find(c => c.id === transaction.clientId);
 
         return (
           <Card key={transaction.id}>
@@ -55,7 +63,7 @@ export const TransactionsList = ({ transactions, client, clients = [] }: Transac
                 ) : (
                   <ArrowDown className="h-5 w-5 text-success" />
                 )}
-                <Badge variant={transaction.type === "debt" ? "destructive" : "success"}>
+                <Badge variant={transaction.type === "debt" ? "destructive" : "default"}>
                   {transaction.type === "debt" ? "Deuda" : "Abono"}
                 </Badge>
                 <span className="ml-2 text-sm text-muted-foreground flex items-center gap-1">

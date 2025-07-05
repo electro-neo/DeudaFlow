@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useCurrency } from "../context/CurrencyContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,7 +51,7 @@ export const Transactions = () => {
     let filtered = transactions;
 
     if (selectedClientId !== "all") {
-      filtered = filtered.filter(t => t.client_id === selectedClientId);
+      filtered = filtered.filter(t => t.clientId === selectedClientId);
     }
 
     if (typeFilter !== "all") {
@@ -60,7 +61,7 @@ export const Transactions = () => {
     if (searchTerm) {
       filtered = filtered.filter(t => 
         (t.description?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
-        (clients.find(c => c.id === t.client_id)?.name.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
+        (clients.find(c => c.id === t.clientId)?.name.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
       );
     }
 
@@ -153,16 +154,18 @@ export const Transactions = () => {
     ? clients.find(c => c.id === selectedClientId) 
     : null;
 
+  const { currency, rate } = useCurrency();
+  // Siempre muestra los montos en moneda local, pero si el toggle está en USD muestra el equivalente en USD
+  const formatCurrency = (amount: number) => {
+    if (currency === "USD") {
+      return `$${(amount / rate).toFixed(2)} USD`;
+    } else {
+      return `${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} 💱`;
+    }
+  };
   const totalAmount = filteredTransactions.reduce((sum, t) => {
     return sum + (t.type === 'debt' ? t.amount : -t.amount);
   }, 0);
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-MX', {
-      style: 'currency',
-      currency: 'MXN'
-    }).format(amount);
-  };
 
   if (session === undefined) {
     return <div>Cargando...</div>;

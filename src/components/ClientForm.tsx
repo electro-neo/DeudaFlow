@@ -71,7 +71,9 @@ export const ClientForm = ({ open, onOpenChange, client, onSave }: ClientFormPro
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               placeholder="email@ejemplo.com"
+              autoComplete="off"
             />
+            <span className="text-xs text-muted-foreground">Opcional</span>
           </div>
 
           <div className="space-y-2">
@@ -99,11 +101,16 @@ export const ClientForm = ({ open, onOpenChange, client, onSave }: ClientFormPro
             <Label htmlFor="balance">Balance Inicial</Label>
             <Input
               id="balance"
-              type="number"
-              step="0.01"
-              value={formData.balance}
-              onChange={(e) => setFormData({ ...formData, balance: parseFloat(e.target.value) || 0 })}
-              placeholder="0.00"
+              type="text"
+              inputMode="decimal"
+              pattern="^[0-9]*[.,]?[0-9]*$"
+              value={formData.balance === 0 ? '' : formData.balance}
+              onChange={(e) => {
+                const val = e.target.value.replace(',', '.');
+                setFormData({ ...formData, balance: val === '' ? 0 : parseFloat(val) });
+              }}
+              placeholder="Balance inicial"
+              autoComplete="off"
             />
           </div>
 

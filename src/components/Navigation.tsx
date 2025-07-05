@@ -1,5 +1,8 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { Switch } from "@/components/ui/switch";
+import { useCurrency } from "../context/CurrencyContext";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { LayoutDashboard, Users, Activity, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -9,6 +12,7 @@ export const Navigation = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const { currency, setCurrency, rate, setRate } = useCurrency();
 
   // Elimina clientes y transacciones del usuario invitado al cerrar sesión
   const handleGuestLogoutCleanup = async () => {
@@ -55,9 +59,9 @@ export const Navigation = () => {
 
   return (
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-4 relative z-30">
         <div className="flex h-16 items-center justify-between">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center">
             <div className="font-bold text-xl bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
               DebtManager
             </div>
@@ -86,13 +90,40 @@ export const Navigation = () => {
               );
             })}
           </div>
-          {/* Botón de cerrar sesión desktop */}
-          <div className="hidden md:flex flex-1 justify-end">
+          {/* Toggle moneda y tasa: visible en todas las resoluciones, botón cerrar sesión solo en desktop */}
+          <div className="flex flex-1 justify-end items-center gap-6 relative z-20">
+            <div className="flex items-center gap-1 md:gap-2 ml-8 md:ml-12">
+              <span className={currency === "COP" ? "font-bold text-primary" : "text-muted-foreground"}>💱</span>
+              <Switch
+                checked={currency === "USD"}
+                onCheckedChange={(checked) => setCurrency(checked ? "USD" : "COP")}
+                className="mx-1"
+                aria-label="Cambiar moneda"
+              />
+              <span className={currency === "USD" ? "font-bold text-primary" : "text-muted-foreground"}>USD</span>
+              {currency === "USD" && (
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  pattern="^[0-9]*[.,]?[0-9]*$"
+                  value={rate === 0 ? '' : rate}
+                  onChange={e => {
+                    const val = e.target.value.replace(',', '.');
+                    setRate(val === '' ? 0 : parseFloat(val));
+                  }}
+                  className="w-16 sm:w-20 ml-1 text-right"
+                  title="Tasa de conversión a USD"
+                  aria-label="Tasa de conversión a USD"
+                  placeholder="Tasa"
+                  autoComplete="off"
+                />
+              )}
+            </div>
             <Button
               variant="destructive"
               size="sm"
               onClick={handleLogout}
-              className="transition-all duration-200"
+              className="transition-all duration-200 hidden md:inline-flex"
             >
               Cerrar sesión
             </Button>
@@ -106,8 +137,8 @@ export const Navigation = () => {
         </div>
         {/* Menú móvil desplegable */}
         {menuOpen && (
-          <div className="md:hidden absolute left-0 top-16 w-full bg-background border-b z-50 shadow-lg animate-fade-in">
-            <div className="flex flex-col items-center py-4 gap-2">
+          <div className="md:hidden fixed left-0 top-0 w-full h-full bg-background border-b z-[100] shadow-lg animate-fade-in">
+            <div className="flex flex-col items-center py-4 gap-2 relative z-50 bg-white dark:bg-background">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.href;

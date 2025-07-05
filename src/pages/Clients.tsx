@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useCurrency } from "../context/CurrencyContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ClientCard } from "@/components/ClientCard";
@@ -12,6 +13,7 @@ import { supabase } from "../supabaseClient";
 import { useSession } from "@supabase/auth-helpers-react";
 
 export const Clients = () => {
+  const { currency, rate, setRate } = useCurrency();
   const [clients, setClients] = useState<Client[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -198,10 +200,12 @@ export const Clients = () => {
             Administra tus clientes y sus cuentas
           </p>
         </div>
-        <Button onClick={() => setShowClientForm(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nuevo Cliente
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={() => setShowClientForm(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nuevo Cliente
+          </Button>
+        </div>
       </div>
 
       {/* Search */}

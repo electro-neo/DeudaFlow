@@ -31,6 +31,19 @@ export default function Login() {
     }
   };
 
+  // Elimina clientes y transacciones del usuario invitado al cerrar sesión
+  const handleGuestLogoutCleanup = async () => {
+    const guestEmail = "invitado@demo.com";
+    const user = supabase.auth.getUser();
+    // Verifica si el usuario actual es el invitado
+    const { data } = await user;
+    if (data?.user?.email === guestEmail) {
+      // Borra clientes y transacciones del usuario invitado
+      await supabase.from("transactions").delete().eq("user_id", data.user.id);
+      await supabase.from("clients").delete().eq("user_id", data.user.id);
+    }
+  };
+
   const handleGoogleSignIn = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -60,6 +73,14 @@ export default function Login() {
       });
     }
   }, [session, navigate]);
+
+  // Hook para limpiar datos de invitado al cerrar sesión
+  useEffect(() => {
+    if (session === null) {
+      handleGuestLogoutCleanup();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
 
   return (
     <Box sx={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "background.default", px: { xs: 1, sm: 2 } }}>
