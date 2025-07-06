@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">DeudaFlow</string>
+    <string name="title_activity_main">DeudaFlow</string>
+    <string name="package_name">com.deudaflow.deudas</string>
+    <string name="custom_url_scheme">com.deudaflow.deudas</string>
+</resources>
