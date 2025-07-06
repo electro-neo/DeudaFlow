@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +28,19 @@ export const ClientForm = ({ open, onOpenChange, client, onSave }: ClientFormPro
     balance: client?.balance || 0,
   });
 
+  // Sincroniza los datos del formulario cuando cambia el cliente o se abre el formulario
+  useEffect(() => {
+    if (open) {
+      setFormData({
+        name: client?.name || '',
+        email: client?.email || '',
+        phone: client?.phone || '',
+        address: client?.address || '',
+        balance: client?.balance || 0,
+      });
+    }
+  }, [client, open]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) return;
@@ -44,7 +57,7 @@ export const ClientForm = ({ open, onOpenChange, client, onSave }: ClientFormPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {client ? 'Editar Cliente' : 'Nuevo Cliente'}
@@ -56,6 +69,16 @@ export const ClientForm = ({ open, onOpenChange, client, onSave }: ClientFormPro
             <Label htmlFor="name">Nombre *</Label>
             <Input
               id="name"
+              autoFocus
+              ref={el => {
+                if (el) {
+                  el.onfocus = () => {
+                    setTimeout(() => {
+                      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 300);
+                  };
+                }
+              }}
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="Nombre del cliente"
@@ -90,7 +113,7 @@ export const ClientForm = ({ open, onOpenChange, client, onSave }: ClientFormPro
             <Label htmlFor="address">Dirección</Label>
             <Textarea
               id="address"
-              value={formData.address}
+             
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               placeholder="Dirección completa"
               rows={2}

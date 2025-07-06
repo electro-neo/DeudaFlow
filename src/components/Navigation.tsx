@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { LayoutDashboard, Users, Activity, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "../supabaseClient";
+import ReactDOM from "react-dom";
 
 export const Navigation = () => {
   const location = useLocation();
@@ -136,38 +137,47 @@ export const Navigation = () => {
           </div>
         </div>
         {/* Menú móvil desplegable */}
-        {menuOpen && (
-          <div className="md:hidden fixed left-0 top-0 w-full h-full bg-background border-b z-[100] shadow-lg animate-fade-in">
-            <div className="flex flex-col items-center py-4 gap-2 relative z-50 bg-white dark:bg-background">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = location.pathname === item.href;
-                return (
-                  <Button
-                    key={item.href}
-                    variant={isActive ? "default" : "ghost"}
-                    size="lg"
-                    asChild
-                    className={cn("w-11/12 justify-start", isActive && "shadow-md")}
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    <Link to={item.href} className="flex items-center gap-2 w-full">
-                      <Icon className="h-5 w-5" />
-                      {item.label}
-                    </Link>
-                  </Button>
-                );
-              })}
-              <Button
-                variant="destructive"
-                size="lg"
-                className="w-11/12"
-                onClick={handleLogout}
-              >
-                Cerrar sesión
-              </Button>
+        {menuOpen && ReactDOM.createPortal(
+          <div
+            className="fixed inset-0 z-[99]"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setMenuOpen(false);
+            }}
+            style={{ background: 'rgba(0,0,0,0.3)' }}
+          >
+            <div className="absolute right-4 top-16 z-[101] flex flex-col items-end gap-2 animate-fade-in">
+              <div className="flex flex-col items-end gap-2 bg-white dark:bg-background rounded-xl shadow-lg py-2 px-2">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = location.pathname === item.href;
+                  return (
+                    <Button
+                      key={item.href}
+                      variant={isActive ? "default" : "ghost"}
+                      size="sm"
+                      asChild
+                      className={cn("min-w-fit px-3 py-1 text-base rounded-md flex items-center", isActive && "shadow-md")}
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      <Link to={item.href} className="flex items-center gap-2">
+                        <Icon className="h-5 w-5" />
+                        {item.label}
+                      </Link>
+                    </Button>
+                  );
+                })}
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="min-w-fit px-3 py-1 text-base rounded-md flex items-center"
+                  onClick={handleLogout}
+                >
+                  Cerrar sesión
+                </Button>
+              </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
       </div>
     </nav>

@@ -51,7 +51,9 @@ export const Transactions = () => {
     let filtered = transactions;
 
     if (selectedClientId !== "all") {
-      filtered = filtered.filter(t => t.clientId === selectedClientId);
+      filtered = filtered.filter(t =>
+        t.clientId === selectedClientId || t.client_id === selectedClientId
+      );
     }
 
     if (typeFilter !== "all") {
@@ -88,7 +90,13 @@ export const Transactions = () => {
     if (error) {
       toast({ title: "Error al cargar transacciones", description: error.message });
     } else {
-      setTransactions(data || []);
+      // Mapear client_id a clientId y created_at a createdAt si es necesario
+      const mapped = (data || []).map((t: any) => ({
+        ...t,
+        clientId: t.client_id,
+        createdAt: t.created_at,
+      }));
+      setTransactions(mapped);
     }
   };
 

@@ -38,7 +38,14 @@ export const Dashboard = () => {
       .from("transactions")
       .select("*")
       .eq("user_id", user.id);
-    if (!error) setTransactions(data || []);
+    if (!error) {
+      const mapped = (data || []).map((t: any) => ({
+        ...t,
+        clientId: t.client_id,
+        createdAt: t.created_at,
+      }));
+      setTransactions(mapped);
+    }
   };
 
   const handleLogout = async () => {

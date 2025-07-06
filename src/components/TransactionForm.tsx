@@ -103,11 +103,18 @@ export const TransactionForm = ({
         
         {client && (
           <div className="rounded-lg bg-muted/50 p-3 text-sm">
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Balance actual:</span>
-              <span className={`font-medium ${client.balance > 0 ? 'text-destructive' : client.balance < 0 ? 'text-success' : ''}`}>
-                {formatCurrency(client.balance)}
-              </span>
+            <div className="flex flex-col gap-1">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Balance actual:</span>
+                <span className={`font-medium ${client.balance > 0 ? 'text-destructive' : client.balance < 0 ? 'text-success' : ''}`}>
+                  {client.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} 💱
+                </span>
+              </div>
+              {currency === "USD" && (
+                <div className="flex justify-end text-xs text-muted-foreground">
+                  ≈ ${(client.balance / rate).toFixed(2)} USD
+                </div>
+              )}
             </div>
           </div>
         )}

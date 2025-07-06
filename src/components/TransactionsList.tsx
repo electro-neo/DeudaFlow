@@ -79,8 +79,8 @@ export const TransactionsList = ({ transactions, client, clients = [] }: Transac
             <CardContent>
               <div className="flex flex-col gap-1">
                 {transactionClient && (
-                  <span className="text-sm text-muted-foreground">
-                    Cliente: <span className="font-medium">{transactionClient.name}</span>
+                  <span className="text-sm font-semibold text-primary">
+                    {transactionClient.name}
                   </span>
                 )}
                 {transaction.description && (
