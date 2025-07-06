@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Client } from "@/types/client";
 import { useCurrency } from "../context/CurrencyContext";
-import { User, Phone, Mail, MapPin, Trash2, Edit, Plus, Minus } from "lucide-react";
+import { User, Phone, Mail, MapPin, Trash2, Edit, Plus, Minus, FileText } from "lucide-react";
 
 interface ClientCardProps {
   client: Client;
@@ -11,6 +11,7 @@ interface ClientCardProps {
   onDelete: (clientId: string) => void;
   onAddTransaction: (clientId: string, type: 'debt' | 'payment') => void;
   onViewTransactions: (clientId: string) => void;
+  onShowReceipt: () => void;
 }
 
 export const ClientCard = ({ 
@@ -18,7 +19,8 @@ export const ClientCard = ({
   onEdit, 
   onDelete, 
   onAddTransaction, 
-  onViewTransactions 
+  onViewTransactions,
+  onShowReceipt
 }: ClientCardProps) => {
   const { currency, rate } = useCurrency();
   // Siempre muestra el balance en moneda local, pero si el toggle está en USD muestra el equivalente en USD
@@ -93,6 +95,15 @@ export const ClientCard = ({
         </div>
 
         <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onShowReceipt}
+            className="flex items-center gap-1"
+          >
+            <FileText className="h-4 w-4" />
+            Recibo
+          </Button>
           <Button
             variant="secondary"
             size="sm"

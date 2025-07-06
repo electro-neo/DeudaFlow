@@ -1,8 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { useCurrency } from "../context/CurrencyContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ClientCard } from "@/components/ClientCard";
+import { ReceiptModal } from "@/components/ReceiptModal";
 import { ClientForm } from "@/components/ClientForm";
 import { TransactionForm } from "@/components/TransactionForm";
 import { Client, Transaction } from "@/types/client";
@@ -21,7 +23,9 @@ export const Clients = () => {
   const [showTransactionForm, setShowTransactionForm] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [transactionType, setTransactionType] = useState<'debt' | 'payment'>('debt');
+  const [transactionType, setTransactionType] = useState<'debt' | 'payment'>("debt");
+  const [showReceipt, setShowReceipt] = useState(false);
+  const [receiptClient, setReceiptClient] = useState<Client | null>(null);
 
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -40,6 +44,7 @@ export const Clients = () => {
   useEffect(() => {
     if (user) {
       fetchClients();
+      fetchTransactions();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
@@ -53,9 +58,28 @@ export const Clients = () => {
       .order("created_at", { ascending: false });
     if (error) {
       toast({ title: "Error al cargar clientes", description: error.message });
-      setClients([]); // <-- agrega esto
+      setClients([]);
     } else {
       setClients(data || []);
+    }
+  };
+
+  // Cargar transacciones desde Supabase
+  const fetchTransactions = async () => {
+    const { data, error } = await supabase
+      .from("transactions")
+      .select("*")
+      .eq("user_id", user.id);
+    if (error) {
+      toast({ title: "Error al cargar transacciones", description: error.message });
+    } else {
+      // Mapear client_id a clientId y created_at a createdAt si es necesario
+      const mapped = (data || []).map((t: any) => ({
+        ...t,
+        clientId: t.client_id,
+        createdAt: t.created_at,
+      }));
+      setTransactions(mapped);
     }
   };
 
@@ -73,7 +97,7 @@ export const Clients = () => {
         .from("clients")
         .update({ ...clientData, updated_at: now })
         .eq("id", editingClient.id)
-        .eq("user_id", user.id); // Solo permite actualizar si es del usuario
+        .eq("user_id", user.id);
       if (error) {
         toast({ title: "Error al actualizar cliente", description: error.message });
       } else {
@@ -83,9 +107,6 @@ export const Clients = () => {
       setEditingClient(null);
     } else {
       // Crear nuevo cliente
-      console.log("user:", user);
-      console.log("user.id:", user?.id);
-      console.log("Insertando cliente con user_id:", user?.id, clientData);
       const { error } = await supabase
         .from("clients")
         .insert([{ ...clientData, balance: clientData.balance ?? 0, created_at: now, updated_at: now, user_id: user.id }]);
@@ -105,7 +126,7 @@ export const Clients = () => {
         .from("clients")
         .delete()
         .eq("id", clientId)
-        .eq("user_id", user.id); // Solo permite eliminar si es del usuario
+        .eq("user_id", user.id);
       if (error) {
         toast({ title: "Error al eliminar cliente", description: error.message });
       } else {
@@ -115,8 +136,6 @@ export const Clients = () => {
     }
   };
 
-  // Las siguientes funciones siguen usando el estado local para transacciones.
-  // Si quieres migrar transacciones a Supabase, deberás adaptar también esas funciones.
   const handleAddTransaction = (clientId: string, type: 'debt' | 'payment') => {
     const client = clients.find(c => c.id === clientId);
     if (client) {
@@ -176,6 +195,7 @@ export const Clients = () => {
       }
     }
     setShowTransactionForm(false);
+    fetchTransactions();
   };
 
   const handleViewTransactions = (clientId: string) => {
@@ -233,6 +253,10 @@ export const Clients = () => {
               onDelete={handleDeleteClient}
               onAddTransaction={handleAddTransaction}
               onViewTransactions={handleViewTransactions}
+              onShowReceipt={() => {
+                setReceiptClient(client);
+                setShowReceipt(true);
+              }}
             />
           ))}
         </div>
@@ -272,6 +296,16 @@ export const Clients = () => {
         type={transactionType}
         onSave={handleSaveTransaction}
       />
+
+      {/* Modal de recibo */}
+      {receiptClient && (
+        <ReceiptModal
+          open={showReceipt}
+          onOpenChange={setShowReceipt}
+          client={receiptClient}
+          transactions={transactions.filter(t => t.clientId === receiptClient.id)}
+        />
+      )}
     </div>
   );
 };
