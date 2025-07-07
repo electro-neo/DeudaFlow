@@ -34,11 +34,18 @@ export const Clients = () => {
   const session = useSession();
   const user = session?.user;
 
+
+  // Manejar redirección solo en efecto para evitar warning de React
+  useEffect(() => {
+    if (session === null) {
+      navigate("/login");
+    }
+  }, [session, navigate]);
+
   if (session === undefined) {
     return <div>Cargando...</div>;
   }
   if (session === null) {
-    navigate("/login");
     return null;
   }
 
@@ -122,7 +129,18 @@ export const Clients = () => {
 
   // Eliminar cliente de Supabase
   const handleDeleteClient = async (clientId: string) => {
-    if (confirm("¿Estás seguro de que deseas eliminar este cliente?")) {
+    if (confirm("¿Estás seguro de que deseas eliminar este cliente? Se eliminarán también todas sus transacciones.")) {
+      // 1. Eliminar transacciones asociadas
+      const { error: txError } = await supabase
+        .from("transactions")
+        .delete()
+        .eq("client_id", clientId)
+        .eq("user_id", user.id);
+      if (txError) {
+        toast({ title: "Error al eliminar transacciones", description: txError.message });
+        return;
+      }
+      // 2. Eliminar cliente
       const { error } = await supabase
         .from("clients")
         .delete()
