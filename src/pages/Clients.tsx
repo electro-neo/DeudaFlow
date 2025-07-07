@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useCurrency } from "../context/CurrencyContext";
 import { Button } from "@/components/ui/button";
@@ -8,11 +7,12 @@ import { ReceiptModal } from "@/components/ReceiptModal";
 import { ClientForm } from "@/components/ClientForm";
 import { TransactionForm } from "@/components/TransactionForm";
 import { Client, Transaction } from "@/types/client";
-import { Plus, Search, Users } from "lucide-react";
+import { Plus, Search, Users, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { useSession } from "@supabase/auth-helpers-react";
+import { ReceiptGeneralModal } from "@/components/ReceiptGeneralModal";
 
 export const Clients = () => {
   const { currency, rate, setRate } = useCurrency();
@@ -26,6 +26,7 @@ export const Clients = () => {
   const [transactionType, setTransactionType] = useState<'debt' | 'payment'>("debt");
   const [showReceipt, setShowReceipt] = useState(false);
   const [receiptClient, setReceiptClient] = useState<Client | null>(null);
+  const [showGeneralReceipt, setShowGeneralReceipt] = useState(false);
 
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -225,6 +226,12 @@ export const Clients = () => {
             <Plus className="h-4 w-4 mr-2" />
             Nuevo Cliente
           </Button>
+          {clients.length > 0 && (
+            <Button onClick={() => setShowGeneralReceipt(true)}>
+              <FileText className="h-4 w-4 mr-2" />
+              Recibo General
+            </Button>
+          )}
         </div>
       </div>
 
@@ -306,6 +313,14 @@ export const Clients = () => {
           transactions={transactions.filter(t => t.clientId === receiptClient.id)}
         />
       )}
+
+      {/* Modal Recibo General */}
+      <ReceiptGeneralModal
+        open={showGeneralReceipt}
+        onOpenChange={setShowGeneralReceipt}
+        clients={clients}
+        transactions={transactions}
+      />
     </div>
   );
 };
