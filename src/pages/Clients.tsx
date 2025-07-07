@@ -127,7 +127,7 @@ export const Clients = () => {
     }
   };
 
-  // Eliminar cliente de Supabase
+  // Eliminar Cliente de Supabase
   const handleDeleteClient = async (clientId: string) => {
     if (confirm("¿Estás seguro de que deseas eliminar este cliente? Se eliminarán también todas sus transacciones.")) {
       // 1. Eliminar transacciones asociadas
